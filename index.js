@@ -1,67 +1,53 @@
-const fs = require("fs");
-const puppeteer = require("puppeteer");
+const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 (async () => {
-    try{
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+  try {
+    const browser = await puppeteer.launch({
+      ignoreHTTPSErrors: true,
+      headless: false
+    });
+    const page = await browser.newPage();
 
-        //specify chapter page url
-        await page.goto(
-            "https://tokyorevengersmanga.com/manga/tokyo-manji-revengers-vol-1-chapter-1-reborn/"
-        );
-
+    //starting page
+    await page.goto(
+      "https://tokyorevengersmanga.com/manga/tokyo-manji-revengers-vol-1-chapter-1-reborn/"
+    );
+    
+    let i = 0;
+   
+    
+    while(i < 3){
         console.log("page has loaded")
-
         const chapter = await page.evaluate(() => {
-            const pages = Array.from(
-                document.querySelectorAll("img.aligncenter")
-            ).map((image) => image.getAttribute("src"));
-
-
-            return pages
+        const pages = Array.from(
+            document.querySelectorAll("img.aligncenter")
+        ).map((image) => image.getAttribute("src"));
+        return pages
         });
 
         fs.writeFileSync("./data.json", JSON.stringify(chapter));
-        console.log("File is created!");
+        //fs.appendFile("./data.json", JSON.stringify(chapter))
+        //console.log("File is created!");
 
-       
-        const nextPage = await page.evaluate(() => {
-            var obj = document.querySelectorAll("span.next-prev-text");
-
-            return obj[1];
-        })
-
-        await page.click(nextPage);
-        await page.waitForNavigation();
-
-        console.log("on 2nd page?")
+        const next = await page.$$(".next-prev-text");
+        const [popup] = await Promise.all([
+        new Promise((resolve) => page.once('popup', async p => {
+            await p.waitForNavigation({
+            waitUntil: 'networkidle0'
+            });
+            resolve(p);
+        })),
+        console.log(i + " " + next),
+        next[1].click()
+        ]);
         
-
-        
-        await browser.close();
-
-
-    }catch(error){
-        console.log(error);
     }
-/*
-    fs.readFile('./data.json', 'utf-8', (err,data) => {
-        if(err){
-            console.log('error reading file', err);
-            return;
-        }try{
-            const value = JSON.parse(data);
-            console.log(value);
-        }catch(err){
-            console.log(err);
-        }
-    }) ;*/
 
+    // do your job on the next page with 'popup' here
+
+    await browser.close();
+  } catch (error) {
+    console.log(error);
+  }
 })();
-
-
-
-
-
-
