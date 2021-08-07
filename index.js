@@ -17,20 +17,35 @@ const puppeteer = require("puppeteer");
             const pages = Array.from(
                 document.querySelectorAll("img.aligncenter")
             ).map((image) => image.getAttribute("src"));
+
+
             return pages
         });
 
         fs.writeFileSync("./data.json", JSON.stringify(chapter));
-        console.log("File is created!"); 
+        console.log("File is created!");
+
+       
+        const nextPage = await page.evaluate(() => {
+            var obj = document.querySelectorAll("span.next-prev-text");
+
+            return obj[1];
+        })
+
+        await page.click(nextPage);
+        await page.waitForNavigation();
+
+        console.log("on 2nd page?")
+        
+
         
         await browser.close();
 
-        
 
     }catch(error){
         console.log(error);
     }
-
+/*
     fs.readFile('./data.json', 'utf-8', (err,data) => {
         if(err){
             console.log('error reading file', err);
@@ -41,7 +56,12 @@ const puppeteer = require("puppeteer");
         }catch(err){
             console.log(err);
         }
-    }) ;
+    }) ;*/
 
 })();
+
+
+
+
+
 
